@@ -323,7 +323,7 @@ if [ "$_arg_slow_cpu" = "on" ]; then
 		RECORD_FRAMERATE=2
 fi
 
-pushd /home/batman/openpilot
+pushd /tmp/openpilot
 
 if [ -n "$JWT_AUTH" ]; then
     mkdir -p "$HOME"/.comma/
@@ -331,7 +331,7 @@ if [ -n "$JWT_AUTH" ]; then
 fi
 
 # Start processes
-tmux new-session -d -s clipper -n x11 "Xtigervnc :0 -geometry 1920x1080 -SecurityTypes None -rfbport $VNC_PORT"
+tmux new-session -d -s clipper -n x11 "Xtigervnc :0 -geometry 2160x1080 -SecurityTypes None -rfbport $VNC_PORT"
 tmux new-window -n replay -t clipper: "TERM=xterm-256color faketime -m -f \"+0 x$SPEEDHACK_AMOUNT\" ./tools/replay/replay --ecam -s \"$SMEARED_STARTING_SEC\" \"$ROUTE\""
 tmux new-window -n ui -t clipper: "faketime -m -f \"+0 x$SPEEDHACK_AMOUNT\" ./selfdrive/ui/ui"
 
@@ -370,7 +370,7 @@ else
 fi
 # Make sure the UI runs at full speed.
 pwd
-nice -n 10 ffmpeg -framerate "$RECORD_FRAMERATE" -video_size 1920x1080 -f x11grab -draw_mouse 0 -i :0.0 -ss "$SMEAR_AMOUNT" -vcodec libx264rgb -crf 0 -preset ultrafast -r 20 -filter:v "setpts=$SPEEDHACK_AMOUNT*PTS,scale=1920:1080" -y -t "$RECORDING_LENGTH" "$VIDEO_RAW_OUTPUT"
+nice -n 10 ffmpeg -framerate "$RECORD_FRAMERATE" -video_size 2160x1080 -f x11grab -draw_mouse 0 -i :0.0 -ss "$SMEAR_AMOUNT" -vcodec libx264rgb -crf 0 -preset ultrafast -r 20 -filter:v "setpts=$SPEEDHACK_AMOUNT*PTS,scale=2160:1080" -y -t "$RECORDING_LENGTH" "$VIDEO_RAW_OUTPUT"
 # The setup is no longer needed. Just transcode now.
 cleanup
 ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -c:v libx264 -b:v "$TARGET_BITRATE" -pix_fmt yuv420p -preset medium -pass 1 -an -f MP4 /dev/null
