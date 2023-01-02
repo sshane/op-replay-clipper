@@ -316,8 +316,8 @@ ROUTE_INFO_PLATFORM=$(echo "$ROUTE_INFO" | jq -r '.platform')
 
 # Render speed
 # RECORD_FRAMERATE = SPEEDHACK_AMOUNT * 20
-SPEEDHACK_AMOUNT=0.3
-RECORD_FRAMERATE=6
+SPEEDHACK_AMOUNT=0.75
+RECORD_FRAMERATE=15
 if [ "$_arg_slow_cpu" = "on" ]; then
 		SPEEDHACK_AMOUNT=0.1
 		RECORD_FRAMERATE=2
@@ -346,12 +346,12 @@ tmux send-keys -t clipper:replay Space
 
 popd
 
-# Generate and start overlay
-CLIP_DESC="Segment ID: $SEGMENT_ID, Starting Second: $STARTING_SEC, Clip Length: $RECORDING_LENGTH, \
-$ROUTE_INFO_GIT_REMOTE, $ROUTE_INFO_GIT_BRANCH, $ROUTE_INFO_GIT_COMMIT, Dirty: \
-$ROUTE_INFO_GIT_DIRTY, $ROUTE_INFO_PLATFORM"
-echo "$CLIP_DESC" > /tmp/overlay.txt
-overlay -o N -e 10 /tmp/overlay.txt &
+## Generate and start overlay
+#CLIP_DESC="Segment ID: $SEGMENT_ID, Starting Second: $STARTING_SEC, Clip Length: $RECORDING_LENGTH, \
+#$ROUTE_INFO_GIT_REMOTE, $ROUTE_INFO_GIT_BRANCH, $ROUTE_INFO_GIT_COMMIT, Dirty: \
+#$ROUTE_INFO_GIT_DIRTY, $ROUTE_INFO_PLATFORM"
+#echo "$CLIP_DESC" > /tmp/overlay.txt
+#overlay -o N -e 10 /tmp/overlay.txt &
 
 # Record with ffmpeg
 mkdir -p "$VIDEO_CWD"
