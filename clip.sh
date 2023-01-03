@@ -376,7 +376,7 @@ nice -n 15 ffmpeg -framerate "$RECORD_FRAMERATE" -video_size 2160x1080 -f x11gra
 cleanup
 #ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -c:v libx264 -b:v "$TARGET_BITRATE" -pix_fmt yuv420p -preset medium -pass 1 -an -f MP4 /dev/null
 #ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -c:v libx264 -b:v "$TARGET_BITRATE" -pix_fmt yuv420p -preset medium -pass 2 -movflags +faststart -f MP4 "$VIDEO_OUTPUT"
-ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -vf scale=2160:1080 -r 20 -f rawvideo -c:v h264 -b:v 4000k -pix_fmt yuv420p -strict -2 "/home/batman/openpilot/selfdrive/assets/videos/out/$VIDEO_OUTPUT"
+ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -vf scale=2160:1080 -r 20 -f rawvideo -c:v h264 -b:v 4000k -pix_fmt yuv420p -strict -2 "/tmp/openpilot/selfdrive/assets/videos/out/$VIDEO_OUTPUT"
 
 ## Set mp4 metadata
 #AtomicParsley "$VIDEO_OUTPUT" --title "Segment ID: $SEGMENT_ID, Starting Sec: $STARTING_SEC" \
