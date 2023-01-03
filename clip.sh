@@ -287,8 +287,8 @@ RENDER_EXPERIMENTAL_MODE=$_arg_experimental
 RENDER_METRIC_SYSTEM=$_arg_metric
 JWT_AUTH=$_arg_jwt_token
 VIDEO_CWD=$_arg_video_cwd
-VIDEO_RAW_OUTPUT=clip_raw.mkv
-VIDEO_OUTPUT=$_arg_output
+VIDEO_RAW_OUTPUT=clip_raw-$SEGMENT_ID.mkv
+VIDEO_OUTPUT=clip-$SEGMENT_ID.mp4
 # Target an appropiate bitrate of filesize of 8MB for the video length
 TARGET_MB=$_arg_target_mb
 # Subtract a quarter of a megabyte to give some leeway for uploader limits
@@ -300,30 +300,30 @@ VNC_PORT=$_arg_vnc
 URL_ROUTE=$(echo "$ROUTE" | sed 's/|/%7C/g')
 
 # Get route info
-if [ -n "$JWT_AUTH" ]; then
-	ROUTE_INFO=$(curl --fail -H "Authorization: JWT $JWT_AUTH" https://api.commadotai.com/v1/route/$URL_ROUTE/)
-else
-	ROUTE_INFO=$(curl --fail https://api.commadotai.com/v1/route/$URL_ROUTE/)
-fi
-
-ROUTE_INFO_GIT_REMOTE=$(echo "$ROUTE_INFO" | jq -r '.git_remote')
-ROUTE_INFO_GIT_BRANCH=$(echo "$ROUTE_INFO" | jq -r '.git_branch')
-ROUTE_INFO_GIT_COMMIT=$(echo "$ROUTE_INFO" | jq -r '.git_commit' | cut -c1-8)
-ROUTE_INFO_GIT_DIRTY=$(echo "$ROUTE_INFO" | jq -r '.git_dirty')
-
-# Get platform of route
-ROUTE_INFO_PLATFORM=$(echo "$ROUTE_INFO" | jq -r '.platform')
+#if [ -n "$JWT_AUTH" ]; then
+#	ROUTE_INFO=$(curl --fail -H "Authorization: JWT $JWT_AUTH" https://api.commadotai.com/v1/route/$URL_ROUTE/)
+#else
+#	ROUTE_INFO=$(curl --fail https://api.commadotai.com/v1/route/$URL_ROUTE/)
+#fi
+#
+#ROUTE_INFO_GIT_REMOTE=$(echo "$ROUTE_INFO" | jq -r '.git_remote')
+#ROUTE_INFO_GIT_BRANCH=$(echo "$ROUTE_INFO" | jq -r '.git_branch')
+#ROUTE_INFO_GIT_COMMIT=$(echo "$ROUTE_INFO" | jq -r '.git_commit' | cut -c1-8)
+#ROUTE_INFO_GIT_DIRTY=$(echo "$ROUTE_INFO" | jq -r '.git_dirty')
+#
+## Get platform of route
+#ROUTE_INFO_PLATFORM=$(echo "$ROUTE_INFO" | jq -r '.platform')
 
 # Render speed
 # RECORD_FRAMERATE = SPEEDHACK_AMOUNT * 20
-SPEEDHACK_AMOUNT=0.3
-RECORD_FRAMERATE=6
+SPEEDHACK_AMOUNT=0.2
+RECORD_FRAMERATE=4
 if [ "$_arg_slow_cpu" = "on" ]; then
 		SPEEDHACK_AMOUNT=0.1
 		RECORD_FRAMERATE=2
 fi
 
-pushd /tmp/openpilot
+pushd /home/batman/openpilot
 
 if [ -n "$JWT_AUTH" ]; then
     mkdir -p "$HOME"/.comma/
@@ -332,7 +332,7 @@ fi
 
 # Start processes
 tmux new-session -d -s clipper -n x11 "Xtigervnc :0 -geometry 2160x1080 -SecurityTypes None -rfbport $VNC_PORT"
-tmux new-window -n replay -t clipper: "TERM=xterm-256color faketime -m -f \"+0 x$SPEEDHACK_AMOUNT\" ./tools/replay/replay --ecam -s \"$SMEARED_STARTING_SEC\" \"$ROUTE\""
+tmux new-window -n replay -t clipper: "TERM=xterm-256color faketime -m -f \"+0 x$SPEEDHACK_AMOUNT\" ./tools/replay/replay --data_dir /tmp/comma_videos --ecam -s \"$SMEARED_STARTING_SEC\" \"$ROUTE\""
 tmux new-window -n ui -t clipper: "faketime -m -f \"+0 x$SPEEDHACK_AMOUNT\" ./selfdrive/ui/ui"
 
 # Pause replay and let it download the route
@@ -371,17 +371,18 @@ fi
 # Make sure the UI runs at full speed.
 pwd
 #_window_id=$(xwininfo -name _ui | grep 'id: 0x' | grep -Eo '0x[a-z0-9]+')
-nice -n 10 ffmpeg -framerate "$RECORD_FRAMERATE" -video_size 2160x1080 -f x11grab -draw_mouse 0 -i :0.0 -ss "$SMEAR_AMOUNT" -vcodec libx264rgb -crf 0 -preset ultrafast -r 20 -filter:v "setpts=$SPEEDHACK_AMOUNT*PTS,scale=2160:1080" -y -t "$RECORDING_LENGTH" "$VIDEO_RAW_OUTPUT"
+nice -n 15 ffmpeg -framerate "$RECORD_FRAMERATE" -video_size 2160x1080 -f x11grab -draw_mouse 0 -i :0.0 -ss "$SMEAR_AMOUNT" -vcodec libx264rgb -crf 0 -preset ultrafast -r 20 -filter:v "setpts=$SPEEDHACK_AMOUNT*PTS,scale=2160:1080" -y -t "$RECORDING_LENGTH" "$VIDEO_RAW_OUTPUT"
 # The setup is no longer needed. Just transcode now.
 cleanup
-ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -c:v libx264 -b:v "$TARGET_BITRATE" -pix_fmt yuv420p -preset medium -pass 1 -an -f MP4 /dev/null
-ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -c:v libx264 -b:v "$TARGET_BITRATE" -pix_fmt yuv420p -preset medium -pass 2 -movflags +faststart -f MP4 "$VIDEO_OUTPUT"
+#ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -c:v libx264 -b:v "$TARGET_BITRATE" -pix_fmt yuv420p -preset medium -pass 1 -an -f MP4 /dev/null
+#ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -c:v libx264 -b:v "$TARGET_BITRATE" -pix_fmt yuv420p -preset medium -pass 2 -movflags +faststart -f MP4 "$VIDEO_OUTPUT"
+ffmpeg -y -i "$VIDEO_RAW_OUTPUT" -vf scale=2160:1080 -r 20 -f rawvideo -c:v h264 -b:v 4000k -pix_fmt yuv420p -strict -2 "/home/batman/openpilot/selfdrive/assets/videos/out/$VIDEO_OUTPUT"
 
-# Set mp4 metadata
-AtomicParsley "$VIDEO_OUTPUT" --title "Segment ID: $SEGMENT_ID, Starting Sec: $STARTING_SEC" \
---description "$CLIP_DESC" \
---encodedBy "https://github.com/nelsonjchen/op-replay-clipper, $(git describe --all --long)" \
- --overWrite
+## Set mp4 metadata
+#AtomicParsley "$VIDEO_OUTPUT" --title "Segment ID: $SEGMENT_ID, Starting Sec: $STARTING_SEC" \
+#--description "$CLIP_DESC" \
+#--encodedBy "https://github.com/nelsonjchen/op-replay-clipper, $(git describe --all --long)" \
+# --overWrite
 
 ctrl_c
 
