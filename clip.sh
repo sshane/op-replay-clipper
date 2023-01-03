@@ -316,8 +316,8 @@ ROUTE_INFO_PLATFORM=$(echo "$ROUTE_INFO" | jq -r '.platform')
 
 # Render speed
 # RECORD_FRAMERATE = SPEEDHACK_AMOUNT * 20
-SPEEDHACK_AMOUNT=0.75
-RECORD_FRAMERATE=15
+SPEEDHACK_AMOUNT=0.3
+RECORD_FRAMERATE=6
 if [ "$_arg_slow_cpu" = "on" ]; then
 		SPEEDHACK_AMOUNT=0.1
 		RECORD_FRAMERATE=2
@@ -370,6 +370,7 @@ else
 fi
 # Make sure the UI runs at full speed.
 pwd
+#_window_id=$(xwininfo -name _ui | grep 'id: 0x' | grep -Eo '0x[a-z0-9]+')
 nice -n 10 ffmpeg -framerate "$RECORD_FRAMERATE" -video_size 2160x1080 -f x11grab -draw_mouse 0 -i :0.0 -ss "$SMEAR_AMOUNT" -vcodec libx264rgb -crf 0 -preset ultrafast -r 20 -filter:v "setpts=$SPEEDHACK_AMOUNT*PTS,scale=2160:1080" -y -t "$RECORDING_LENGTH" "$VIDEO_RAW_OUTPUT"
 # The setup is no longer needed. Just transcode now.
 cleanup
